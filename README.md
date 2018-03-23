@@ -1,6 +1,6 @@
 # sgd_gym
 
-Evaluating gradient-based optimization metrics (currently support ["SGD", "Momentum", "Nesterov", "Adagrad", "Adadelta", "RMSprop", "Adam"]) with unit testing functions (currently support ["Beale", "Booth", "Mccormick"]).
+Evaluating gradient-based optimization metrics (currently support ["SGD", "Momentum", "Nesterov", "Adagrad", "Adadelta", "RMSprop", "Adam"]) with unit testing functions (currently support ["Beale", "Booth", "McCormick"]).
 
 For more information, please refer to:
 
@@ -20,7 +20,7 @@ For more information, please refer to:
 ![alt text](images/Booth_0.png "Booth_0")
 ![alt text](images/Booth_1.png "Booth_1")
 
-![alt text](images/Mccormick.png "Mccormick function")
-![alt text](images/Mccormick_gradient.png "Mccormick_gradient function")
-![alt text](images/Mccormick_0.png "Mccormick_0")
-![alt text](images/Mccormick_1.png "Mccormick_1")
+![alt text](images/McCormick.png "Mccormick function")
+![alt text](images/McCormick_gradient.png "Mccormick_gradient function")
+![alt text](images/McCormick_0.png "Mccormick_0")
+![alt text](images/McCormick_1.png "Mccormick_1")

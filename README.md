@@ -5,7 +5,9 @@ Evaluating gradient-based optimization metrics (currently support ["SGD", "Momen
 For more information, please refer to:
 
 [1] https://en.wikipedia.org/wiki/Test_functions_for_optimization
+
 [2] http://tiao.io/notes/visualizing-and-animating-optimization-algorithms-with-matplotlib/
+
 [3] http://ruder.io/optimizing-gradient-descent/index.html#adagrad
 
 ![alt text](images/Beale.png "Beale function")

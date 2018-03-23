@@ -1,3 +1,12 @@
+"""
+Test functions for optimization
+
+For more information: https://en.wikipedia.org/wiki/Test_functions_for_optimization
+
+by Bowen, March 2018
+"""
+
+
 
 from autograd import numpy as np
 from autograd import elementwise_grad
@@ -6,10 +15,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import LogNorm
 
 
-"""
-Test functions for optimization:
-    https://en.wikipedia.org/wiki/Test_functions_for_optimization
-"""
+
 class TestFunction():
 
     def __init__(self):
@@ -98,7 +104,7 @@ class TestFunction():
         ax.plot(self.minima[0], self.minima[1], 'r*', markersize=18)
 
         for i in range(len(optimizers)):
-            ax.plot(tracks[0][i], tracks[1][i], "-", label=optimizers[i]+"_"+str(tracks[0][i].shape[0]))
+            ax.plot(tracks[0][i], tracks[1][i], "-", label=optimizers[i]+"_"+str(tracks[0][i].shape[0]-1))
 
         ax.set_xlabel('$x$')
         ax.set_ylabel('$y$')

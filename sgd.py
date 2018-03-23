@@ -1,9 +1,13 @@
+"""
+Gradient based optimization methods
+
+by Bowen, March 2018
+"""
+
+
 import numpy as np 
 from autograd import elementwise_grad
 
-"""
-SGD
-"""
 class GradientBasedOptimization():
 
     def __init__(self, optimizer=None):
@@ -49,7 +53,7 @@ class GradientBasedOptimization():
         m = np.matrix(np.zeros(w.shape))
         grad_sum_square = np.matrix(np.zeros(w.shape))    # for adagrad
 
-        while x0 >= xmin and x0 <= xmax and y0 >= ymin and y0 <= ymax and not minimum and steps<=20000:
+        while x0 >= xmin and x0 <= xmax and y0 >= ymin and y0 <= ymax and not minimum and steps<20000:
 
             if self.optimizer == 'SGD':
                 # Stochastic gradient descent
@@ -107,7 +111,7 @@ class GradientBasedOptimization():
             steps += 1
 
             # stop at optimal
-            if (x0-minima[0])**2 + (y0-minima[1])**2 <= 0.0001:
+            if (x0-minima[0])**2 + (y0-minima[1])**2 <= 0.01:
                 minimum = True
 
         print (x0, y0, steps)

@@ -8,54 +8,95 @@ by Bowen, March 2018
 import numpy as np 
 from autograd import elementwise_grad
 
+class StepSizeGenerator(object):
 
+    def __init__(self, max_epoch, eps_start=0.01, eps_end=0.0001, gamma=0.55):
+        self.a, self.b = self.__calc_ab(eps_start, eps_end, gamma, max_epoch)
+        self.gamma = gamma
+
+    def __calc_ab(self, eps_start, eps_end, gamma, epoch):
+        """Returns coefficients that characterize step size
+
+        Args:
+            eps_start(float): initial step size
+            eps_end(float): initial step size
+            gamma(float): decay rate
+            epoch(int): # of epoch
+        Returns:
+            pair of float: (A, B) satisfies ``A / B ** gamma == eps_start``
+            and ``A / (B + epoch) ** gamma == eps_end``
+        """
+
+        B = 1 / ((eps_start / eps_end) ** (1 / gamma) - 1) * epoch
+        A = eps_start * B ** gamma
+        eps_start_actual = A / B ** gamma
+        eps_end_actual = A / (B + epoch) ** gamma
+        assert abs(eps_start - eps_start_actual) < 1e-4
+        assert abs(eps_end - eps_end_actual) < 1e-4
+        return A, B
+
+    def __call__(self, epoch):
+        return self.a / (self.b + epoch) ** self.gamma
 
 class SGLangevinDynamics():
     var_x0 = 10.
     var_y0 = 10.
-    sample = 1000
-    gamma = 0.75
-    a = 10
-    b = 10000000
+    sample = 10000
+    # gamma = 0.55
+    # a = 1
+    # b = 10000000
 
-    def __init__(self, func):
-        self.F = func 
+    def __init__(self, func, steps_max=10000):
+        self.F = func
+        self.steps_max = steps_max
+        self.ssg = StepSizeGenerator(steps_max, eps_start=0.001, eps_end=0.00001, gamma=0.85) 
 
 
     def _log_normal(self, x0, y0):
-        return np.log( np.sqrt(2 * np.pi)) - 1/2 * (self.F(x0, y0)**2)
+        # return np.log( np.sqrt(2 * np.pi)) - 1/2 * (self.F(x0, y0)**2)
         # return np.log( np.sqrt(2 * np.pi)) - 1/2 * (x0**2) + np.log( np.sqrt(2 * np.pi)) - 1/2 * (y0**2)
-        # return np.log( np.sqrt(2 * np.pi) * self.step_var ) - 1 / 2 * (x0**2) / (self.step_var**2) + np.log( np.sqrt(2 * np.pi) * self.step_var ) - 1 / 2 * (y0**2) / (self.step_var**2)
+        return np.log( np.sqrt(2 * np.pi) * self.step_var ) - 1 / 2 * (x0**2) / (self.step_var**2) + np.log( np.sqrt(2 * np.pi) * self.step_var ) - 1 / 2 * (y0**2) / (self.step_var**2)
 
     def _log_likelihood(self, x0, y0):
 
         xs = x0 + np.random.randn(self.sample) * self.step_var
         ys = y0 + np.random.randn(self.sample) * self.step_var
 
-        return -np.sum((self.F(xs, ys) - self.F(x0, y0))**2)/self.sample
+        return -np.sum((self.F(xs, ys) - self.F(x0, y0))**2)  #/(self.sample)
 
     def _log_gradient(self, x0, y0):
         return self._log_normal(x0, y0) + self._log_likelihood(x0 ,y0)
 
     def gradient(self, x0, y0):
         # calculate gradent
-        f = lambda x, y: self._log_gradient(x, y)
-        dz_dx = elementwise_grad(f, argnum=0)(x0, y0)
-        dz_dy = elementwise_grad(f, argnum=1)(x0, y0)
-        grad = np.array([dz_dx, dz_dy]).reshape((2,1))
+        # f = lambda x, y: self._log_gradient(x, y)
+        # dz_dx = elementwise_grad(f, argnum=0)(x0, y0)
+        # dz_dy = elementwise_grad(f, argnum=1)(x0, y0)
+        # grad = np.array([dz_dx, dz_dy]).reshape((2,1))
+
+
+        f1 = lambda x, y: self._log_normal(x, y)
+        f2 = lambda x, y: self._log_likelihood(x, y)
+        dz_dx1 = elementwise_grad(f1, argnum=0)(x0, y0)
+        dz_dy1 = elementwise_grad(f1, argnum=1)(x0, y0)
+        dz_dx2 = elementwise_grad(f2, argnum=0)(x0, y0) / self.sample
+        dz_dy2 = elementwise_grad(f2, argnum=1)(x0, y0) / self.sample
+        grad = np.array([dz_dx1 + dz_dx2, dz_dy1 + dz_dy2]).reshape((2,1))
+
         return grad
 
-    def train(self, x0, y0, minima, steps_max=10000):
+    def train(self, x0, y0, minima):
         x0s = [x0]
         y0s = [y0]
         minimum = False
         step = 0
         w = np.matrix(np.array([x0, y0]).reshape((2,1)))
-        while step<steps_max and not minimum:
-            self.step_size = self.a * (self.b + step) ** (-self.gamma)
+        while step<self.steps_max and not minimum:
+            # self.step_size = self.a * (self.b + step) ** (-self.gamma)
+            self.step_size = self.ssg(step)
             self.step_var = np.sqrt(self.step_size) 
 
-            dw = (self.step_var / 2) *self.gradient(x0, y0) + np.random.randn()*self.step_var
+            dw = (self.step_size / 2) *self.gradient(x0, y0) + np.random.randn()*self.step_var
             w = w + dw 
             x0 = float(w[0])
             y0 = float(w[1])
@@ -66,7 +107,7 @@ class SGLangevinDynamics():
             if (x0-minima[0])**2 + (y0-minima[1])**2 <= 0.01:
                 minimum = True
 
-            print (x0, y0, self.step_var, step)
+            print (x0, y0, self.step_var, dw, step)
 
             step += 1
 
@@ -74,19 +115,19 @@ class SGLangevinDynamics():
 
 if __name__ == "__main__":
     from functions import *
-    f, xmin, xmax, ymin, ymax, minima = TestFunction().get_func(name="Beale", plot_func=False, plot_gradient=False)
+    f, xmin, xmax, ymin, ymax, minima = TestFunction().get_func(name="McCormick", plot_func=False, plot_gradient=False)
     X_opt = []
     Y_opt = []
     optimizers = ["SGLD"]
     for optimizer in optimizers:
         print optimizer
-        opt = SGLangevinDynamics(f)
-        x0s, y0s = opt.train(2., 2., minima, steps_max=20000)
+        opt = SGLangevinDynamics(f, steps_max=10000)
+        x0s, y0s = opt.train(0., 2., minima)
         # x0s, y0s = opt.train(1., 2.)
         X_opt += [x0s]
         Y_opt += [y0s]
 
-    TestFunction().plot_optimizer(name="Beale", optimizers=optimizers, tracks=[X_opt, Y_opt])
+    TestFunction().plot_optimizer(name="McCormick", optimizers=optimizers, tracks=[X_opt, Y_opt])
 
 
 

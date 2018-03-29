@@ -24,3 +24,5 @@ For more information, please refer to:
 ![alt text](images/McCormick_gradient.png "Mccormick_gradient function")
 ![alt text](images/McCormick_0.png "Mccormick_0")
 ![alt text](images/McCormick_1.png "Mccormick_1")
+
+![alt text](images/sgld.png "sgld")

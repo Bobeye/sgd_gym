@@ -88,7 +88,7 @@ class TestFunction():
 
         return self.f, self.xmin, self.xmax, self.ymin, self.ymax, self.minima
 
-    def plot_optimizer(self, name="Beale", optimizers=None, tracks=None):
+    def plot_optimizer(self, name="Beale", optimizers=None, tracks=None, samples=None):
         if name == "Beale":
             self.init_beale()
         elif name == "Booth":
@@ -105,6 +105,8 @@ class TestFunction():
 
         for i in range(len(optimizers)):
             ax.plot(tracks[0][i], tracks[1][i], "-", label=optimizers[i]+"_"+str(tracks[0][i].shape[0]-1))
+            if samples is not None:
+                ax.plot(samples[0][i], samples[1][i], ".", alpha=0.3)
 
         ax.set_xlabel('$x$')
         ax.set_ylabel('$y$')

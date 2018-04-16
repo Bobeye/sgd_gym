@@ -28,14 +28,12 @@ class GradientBasedOptimization():
 
         if optimizer == 'Adam':
             self.eta = 0.05
-        elif optimizer == 'RMSprop':
-            self.eta = 0.05
-        elif optimizer == "Adagrad":
-            self.eta = 0.3
-        elif optimizer == "Adadelta":
-            self.eta = 0.0001
         else:
             self.eta = 0.001
+
+        # SGLD params
+        self.sigma = 0.007
+
 
         self.optimizer = optimizer
 
@@ -59,10 +57,18 @@ class GradientBasedOptimization():
                 # Stochastic gradient descent
                 grad = self.gradient(func, w)
                 w = w - self.eta * grad
+            elif self.optimizer == 'SGLD':
+                # Stochastic gradient langevin dynamics
+                grad = self.gradient(func, w)
+                w = w - self.eta * grad + np.random.randn() * self.sigma
             elif self.optimizer == 'Momentum':
                 # Momentum
                 grad = self.gradient(func, w)
                 v = self.gamma * v + self.eta * grad
+                w = w - v
+            elif self.optimizer == 'SGLD-Momentum':
+                grad = self.gradient(func, w)
+                v = self.gamma * v + self.eta * grad + np.random.randn() * self.sigma
                 w = w - v
             elif self.optimizer == 'Nesterov':
                 # Nesterov accelerated gradient
@@ -70,27 +76,11 @@ class GradientBasedOptimization():
                 grad = self.gradient(func, w)
                 v = self.gamma * v + self.eta * grad
                 w = w - v
-            elif self.optimizer == 'Adagrad':
-                # Adagrad
+            elif self.optimizer == 'SGLD-Nesterov':
+                w = w - self.gamma * v
                 grad = self.gradient(func, w)
-                grad_sum_square += np.square(grad)
-                w = w - ((self.eta * grad) / (np.sqrt(grad_sum_square)+ self.epsilon))
-            elif self.optimizer == 'Adadelta':
-                # Adadelta
-                grad = self.gradient(func, w)
-                self.grad_expect = self.gamma * self.grad_expect + (1.0 - self.gamma) * np.square(grad)
-                if init == True:    # use sgd
-                    delta = - self.eta * grad 
-                    init = False
-                else:    
-                    delta = - np.multiply(np.sqrt(self.delta_expect + self.epsilon) / np.sqrt(self.grad_expect + self.epsilon),  grad)
-                w = w + delta
-                self.delta_expect = self.gamma * self.delta_expect + (1.0 - self.gamma) * np.square(delta)
-            elif self.optimizer == 'RMSprop':
-                # RMSprop
-                grad = self.gradient(func, w)
-                self.grad_expect = self.gamma * self.grad_expect + (1.0 - self.gamma) * np.square(grad)
-                w = w - self.eta * grad / np.sqrt(self.grad_expect + self.epsilon)
+                v = self.gamma * v + self.eta * grad + np.random.randn() * self.sigma
+                w = w - v
             elif self.optimizer == 'Adam':
                 # Adam
                 grad = self.gradient(func, w)
@@ -126,4 +116,4 @@ class GradientBasedOptimization():
         grad = np.array([dz_dx, dz_dy]).reshape((2,1))
         return grad
 
-optimizers = ["SGD", "Momentum", "Nesterov", "Adagrad", "Adadelta", "RMSprop", "Adam"]
+optimizers = ["SGD", "Momentum", "Nesterov", "Adam", "SGLD", "SGLD-Momentum", "SGLD-Nesterov"]

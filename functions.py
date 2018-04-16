@@ -104,7 +104,7 @@ class TestFunction():
         ax.plot(self.minima[0], self.minima[1], 'r*', markersize=18)
 
         for i in range(len(optimizers)):
-            ax.plot(tracks[0][i], tracks[1][i], "-", label=optimizers[i]+"_"+str(tracks[0][i].shape[0]-1))
+            ax.plot(tracks[0][i], tracks[1][i], "-", linewidth=2.0, label=optimizers[i]+":"+str(tracks[0][i].shape[0]-1)+" steps")
             if samples is not None:
                 ax.plot(samples[0][i], samples[1][i], ".", alpha=0.3)
 

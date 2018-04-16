@@ -40,16 +40,16 @@ class StepSizeGenerator(object):
         return self.a / (self.b + epoch) ** self.gamma
 
 class SGLangevinDynamics():
-    var_x0 = 0.3
-    var_y0 = 0.3
+    var_x0 = 0.01
+    var_y0 = 0.01
     sample = 1000
     gamma = 0.55
     max_epoch = 2000
-    learning_rate_init = 0.1
-    learning_rate_limit = 0.001
+    learning_rate_init = 0.01
+    learning_rate_limit = 0.0001
     # a = 10
     # b = 1000
-    popsize=10
+    popsize=100
 
     def __init__(self, func):
         self.F = func 
@@ -58,6 +58,7 @@ class SGLangevinDynamics():
                                      eps_end=self.learning_rate_limit, 
                                      gamma=self.gamma)
         self.step_size = self.ssg(0)
+        self.step_var = np.sqrt(self.step_size)
 
 
     # def grad_log_normal(self, mu, sigma):
@@ -132,6 +133,8 @@ class SGLangevinDynamics():
         self.mu = np.array([x0, y0])
         self.sigma = np.array([self.var_x0, self.var_y0])
 
+        # self.sigma = np.array([self.step_var, self.step_var])
+
         self.best_mu = None
         self.best_reward = None
         
@@ -154,6 +157,7 @@ class SGLangevinDynamics():
                 # self.step_size = 0.001
                 self.step_var = np.sqrt(self.step_size) 
 
+
                 
                 # solutions = [self.mu]
                 # for _ in range(self.popsize-1):
@@ -161,9 +165,14 @@ class SGLangevinDynamics():
                 # self.solutions = np.array(solutions)
                 solutions = np.random.multivariate_normal(mean=self.mu, cov=self.sigma*np.eye(2), size=self.popsize)
                 self.solutions = np.array(solutions)
-                for s in solutions:
-                    xs += [s[0]]
-                    ys += [s[1]]
+                # for s in solutions:
+                #     xs += [s[0]]
+                #     ys += [s[1]]
+
+
+                xs += [self.mu[0]]
+                ys += [self.mu[1]]
+
                 # mu_log_normal, sigma_log_normal = self.grad_log_normal(self.mu, self.sigma)
             
                 # mu_log_likelihood = np.zeros(2)
@@ -210,22 +219,22 @@ class SGLangevinDynamics():
                 # delta_mu = np.clip(delta_mu, -0.5, 0.5)
                 # delta_sigma = np.clip(delta_sigma, -0.5, 0.5)            
 
-                self.mu -= delta_mu * self.step_size
-                self.sigma -= delta_sigma * self.step_size
+                # self.mu -= delta_mu * self.step_size / 2 + np.random.randn(2) * self.step_var
+                # self.sigma -= delta_sigma * self.step_size / 2 + np.random.randn(2) * self.step_var
 
 
 
-                # self.mu_m = self.beta1 * self.mu_m + (1.0 - self.beta1) * delta_mu
-                # self.mu_v = self.beta2 * self.mu_v + (1.0 - self.beta2) * np.square(delta_mu)
-                # self.beta1_exp *= self.beta1
-                # self.beta2_exp *= self.beta2
-                # self.mu -= self.eta * (self.mu_m / (1.0 - self.beta1_exp)) / (np.sqrt(self.mu_v / (1.0 - self.beta2_exp)) + self.epsilon)
+                self.mu_m = self.beta1 * self.mu_m + (1.0 - self.beta1) * delta_mu
+                self.mu_v = self.beta2 * self.mu_v + (1.0 - self.beta2) * np.square(delta_mu)
+                self.beta1_exp *= self.beta1
+                self.beta2_exp *= self.beta2
+                self.mu -= self.eta * (self.mu_m / (1.0 - self.beta1_exp)) / (np.sqrt(self.mu_v / (1.0 - self.beta2_exp)) + self.epsilon)
 
-                # self.sigma_m = self.beta1 * self.sigma_m + (1.0 - self.beta1) * delta_sigma
-                # self.sigma_v = self.beta2 * self.sigma_v + (1.0 - self.beta2) * np.square(delta_sigma)
-                # self.beta1_exp *= self.beta1
-                # self.beta2_exp *= self.beta2
-                # self.sigma -= self.eta * (self.sigma_m / (1.0 - self.beta1_exp)) / (np.sqrt(self.sigma_v / (1.0 - self.beta2_exp)) + self.epsilon)
+                self.sigma_m = self.beta1 * self.sigma_m + (1.0 - self.beta1) * delta_sigma
+                self.sigma_v = self.beta2 * self.sigma_v + (1.0 - self.beta2) * np.square(delta_sigma)
+                self.beta1_exp *= self.beta1
+                self.beta2_exp *= self.beta2
+                self.sigma -= self.eta * (self.sigma_m / (1.0 - self.beta1_exp)) / (np.sqrt(self.sigma_v / (1.0 - self.beta2_exp)) + self.epsilon)
 
                 
                 # # self.mu -= delta_mu
@@ -254,7 +263,7 @@ class SGLangevinDynamics():
                 # y0s += [y0]
 
                 # stop at optimal
-                if (x0-minima[0])**2 + (y0-minima[1])**2 <= 0.3:
+                if (x0-minima[0])**2 + (y0-minima[1])**2 <= 0.1:
                     minimum = True
 
                 print (x0, y0, self.mu, self.sigma, self.step_var, step)
@@ -265,9 +274,15 @@ class SGLangevinDynamics():
 
         return np.array(x0s), np.array(y0s), np.array(xs), np.array(ys)
 
+
+
+
+
+
+
 if __name__ == "__main__":
     from functions import *
-    f, xmin, xmax, ymin, ymax, minima = TestFunction().get_func(name="McCormick", plot_func=False, plot_gradient=False)
+    f, xmin, xmax, ymin, ymax, minima = TestFunction().get_func(name="Beale", plot_func=False, plot_gradient=False)
     X_opt = []
     Y_opt = []
     X_sample = []
@@ -284,6 +299,6 @@ if __name__ == "__main__":
         X_sample += [xs]
         Y_sample += [ys]
 
-    TestFunction().plot_optimizer(name="McCormick", optimizers=optimizers, tracks=[X_opt, Y_opt], samples=[X_sample, Y_sample])
+    TestFunction().plot_optimizer(name="Beale", optimizers=optimizers, tracks=[X_opt, Y_opt], samples=[X_sample, Y_sample])
 
 

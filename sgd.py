@@ -28,11 +28,18 @@ class GradientBasedOptimization():
 
         if optimizer == 'Adam':
             self.eta = 0.05
+        elif optimizer == "Nesterov" or optimizer=="SGLD-Nesterov":
+            self.eta = 0.0001
         else:
             self.eta = 0.001
 
         # SGLD params
-        self.sigma = 0.007
+        if optimizer == "Nesterov" or optimizer=="SGLD-Nesterov":
+            self.sigma = 0.002
+        elif optimizer == "SGLD":
+            self.sigma = 0.008
+        else:
+            self.sigma = 0.005
 
 
         self.optimizer = optimizer
